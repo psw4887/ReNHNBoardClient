@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form th:action="'/board/modify/' +${dto.postNo}" method="get">
+    <input type="submit" th:value="PostModify">
+</form>
+<form th:action="'/board/delete/' +${dto.postNo}" method="post">
+    <input type="submit" th:value="PostDelete">
+</form>
+<h2>[TITLE] <span th:text="${dto.title}"></span></h2>
+<h4>[NICKNAME] <span th:text="${dto.writer}"></span></h4>
+<span>[WriteDate]</span><span th:text="${dto.writeDatetime}"></span>
+<span>[ModifyDate]</span><span th:text="${dto.modifyDatetime}"></span>
+<br />
+<div style="border: 1px dashed;  width: 600px; height: 200px; padding: 10px;">
+<span th:text="${dto.content}"></span>
+</div>
+<br />
+<div style="border: 1px solid;  width: 400px; height: 50px; padding: 10px;">
+    <form th:action="'/comment/register/' + ${dto.postNo}" method="post">
+        <span>Create New Comment!</span>
+        <input type="text" name="comment" ><br />
+        <input type="submit" name="button" value="register">
+    </form>
+</div>
+<h3>Comments List</h3>
+<table style="text-align: center">
+    <tr>
+        <th>NickName</th>
+        <th>Comment</th>
+        <th>Modify/Delete</th>
+    </tr>
+<tr th:each="comment : ${dto.commentList}" align="center">
+    <td th:text="${comment.user.userId}"></td>
+    <td th:text="${comment.content}"></td>
+    <form th:action="'/comment/' + ${dto.postNo} + '/' + ${comment.commentNo}" method="get">
+    <td>
+        <input type="submit" name="button" value="Modify">
+        <input type="submit" name="button" value="Delete">
+    </td>
+    </form>
+</tr>
+</table>
+<br />
+<h3><a href="/board/view?page=0">Go Board</a></h3>
+</body>
+</html>

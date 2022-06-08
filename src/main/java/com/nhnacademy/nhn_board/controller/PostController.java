@@ -1,9 +1,9 @@
 package com.nhnacademy.nhn_board.controller;
 
 import com.nhnacademy.nhn_board.dto.OnlyTitleContentDTO;
+import com.nhnacademy.nhn_board.dto.UserDTO;
 import com.nhnacademy.nhn_board.dto.complete.ContentDTO;
 import com.nhnacademy.nhn_board.dto.complete.PostListDTO;
-import com.nhnacademy.nhn_board.entity.User;
 import com.nhnacademy.nhn_board.service.PostService;
 import com.nhnacademy.nhn_board.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +29,13 @@ public class PostController {
                    Model model,
                    HttpServletRequest req) {
 
-        User user = new User();
+       UserDTO user = new UserDTO();
 
         if(Objects.nonNull(req.getSession(false))) {
             user = uService.findUserById((String) req.getSession(false).getAttribute("id"));
         }
 
-        PageRequest pageRequest = PageRequest.of(page, 20);
-        List<PostListDTO> list = pService.getPageablePostList(pageRequest, req);
+        List<PostListDTO> list = pService.getPageablePostList(page);
         model.addAttribute("isEnd", 0);
 
         if(list.size() < 20) {
@@ -141,10 +140,9 @@ public class PostController {
         if (Objects.isNull(req.getSession(false))) {
             return "redirect:/board/view?page=0";
         }
-        User user = uService.findUserById((String) req.getSession(false).getAttribute("id"));
+        UserDTO user = uService.findUserById((String) req.getSession(false).getAttribute("id"));
 
-        PageRequest pageRequest = PageRequest.of(page, 20);
-        List<PostListDTO> lists = pService.getPageableSearchPostList(pageRequest, title, req);
+        List<PostListDTO> lists = pService.getPageableSearchPostList(page, title);
         model.addAttribute("isEnd", 0);
 
         if(lists.size() < 20) {
@@ -167,8 +165,7 @@ public class PostController {
             return "redirect:/board/view?page=0";
         }
 
-        PageRequest pageRequest = PageRequest.of(page, 20);
-        List<PostListDTO> lists = pService.getPageableRecoverPostList(pageRequest, req);
+        List<PostListDTO> lists = pService.getPageableRecoverPostList(page);
         model.addAttribute("isEnd", 0);
 
         if(lists.size() < 20) {

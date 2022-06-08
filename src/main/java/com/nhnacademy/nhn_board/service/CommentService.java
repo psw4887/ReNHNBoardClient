@@ -1,5 +1,6 @@
 package com.nhnacademy.nhn_board.service;
 
+import com.nhnacademy.nhn_board.dto.UserDTO;
 import com.nhnacademy.nhn_board.entity.Comment;
 import com.nhnacademy.nhn_board.entity.Post;
 import com.nhnacademy.nhn_board.entity.User;
@@ -18,7 +19,7 @@ public class CommentService {
 
     private final PostRepository pRepository;
     private final CommentRepository cRepository;
-    private final UserRepository uRepository;
+    private final UserService uService;
 
     public Comment getComment(Integer commentNo) {
 
@@ -29,8 +30,9 @@ public class CommentService {
     public void registerComment(Integer postNo, String content, HttpServletRequest req) {
 
         Post post = pRepository.findById(postNo).orElse(null);
-        User user = uRepository.findByUserId(String.valueOf(req.getSession(false).getAttribute("id"))).orElse(null);
+        UserDTO userDTO = uService.findUserById(String.valueOf(req.getSession(false).getAttribute("id")));
 
+        User user = new User(userDTO.getUserNo(), userDTO.getUserId(), userDTO.getUserPw(), userDTO.getCheckAdmin());
         Comment comment = new Comment(post, user , content);
 
         cRepository.save(comment);

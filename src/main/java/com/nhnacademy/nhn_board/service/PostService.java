@@ -2,6 +2,7 @@ package com.nhnacademy.nhn_board.service;
 
 import com.nhnacademy.nhn_board.dto.OnlyTitleContentDTO;
 import com.nhnacademy.nhn_board.dto.PostContentDTO;
+import com.nhnacademy.nhn_board.dto.UserDTO;
 import com.nhnacademy.nhn_board.dto.ViewPostDTO;
 import com.nhnacademy.nhn_board.dto.complete.ContentDTO;
 import com.nhnacademy.nhn_board.dto.complete.PostListDTO;
@@ -11,9 +12,12 @@ import com.nhnacademy.nhn_board.entity.User;
 import com.nhnacademy.nhn_board.entity.View;
 import com.nhnacademy.nhn_board.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -25,100 +29,74 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class PostService {
 
+    private final RestTemplate restTemplate;
     private final PostRepository pRepository;
-    private final UserRepository uRepository;
+    private final UserService uService;
     private final ViewRepository vRepository;
-    private final CommentRepository cRepository;
     private final LikeRepository lRepository;
 
-    public List<PostListDTO> getPageablePostList(Pageable pageable, HttpServletRequest req) {
+    public List<PostListDTO> getPageablePostList(Integer page) {
 
-        User user = new User();
-        boolean isGuest = true;
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        if(Objects.nonNull(req.getSession(false))) {
-            user = uRepository.findByUserId((String) req.getSession(false).getAttribute("id")).orElse(null);
-            isGuest = false;
-        }
-            List<ViewPostDTO> viewPostDTOS = pRepository.getPageableList(pageable).getContent();
-            List<PostListDTO> postListDTOS = new ArrayList<>();
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<List<PostListDTO>> exchange = restTemplate.exchange("http://localhost:9090/board/view/" + page,
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<>() {
+                });
 
-            for (ViewPostDTO viewPostDTO : viewPostDTOS) {
-                Post post = pRepository.findById(viewPostDTO.getPostNo()).orElse(null);
-                User writer = uRepository.findById(viewPostDTO.getUser().getUserNo()).orElse(null);
-                postListDTOS.add(new PostListDTO(
-                        isLike(user, post, isGuest),
-                        viewPostDTO.getPostNo(),
-                        viewPostDTO.getTitle(),
-                        writer.getUserId(),
-                        viewPostDTO.getWriteDateTime(),
-                        cRepository.countAllByPost(post),
-                        vRepository.countAllByPost(post)));
-            }
-            return postListDTOS;
+        return exchange.getBody();
     }
 
-    public List<PostListDTO> getPageableRecoverPostList(Pageable pageable, HttpServletRequest req) {
+    public List<PostListDTO> getPageableRecoverPostList(Integer page) {
 
-        List<ViewPostDTO> viewPostDTOS = pRepository.getPageableRecoverList(pageable).getContent();
-        List<PostListDTO> postListDTOS = new ArrayList<>();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        for (ViewPostDTO viewPostDTO : viewPostDTOS) {
-            Post post = pRepository.findById(viewPostDTO.getPostNo()).orElse(null);
-            User writer = uRepository.findById(viewPostDTO.getUser().getUserNo()).orElse(null);
-            postListDTOS.add(new PostListDTO(
-                    false,
-                    viewPostDTO.getPostNo(),
-                    viewPostDTO.getTitle(),
-                    writer.getUserId(),
-                    viewPostDTO.getWriteDateTime(),
-                    cRepository.countAllByPost(post),
-                    vRepository.countAllByPost(post)));
-        }
-        return postListDTOS;
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<List<PostListDTO>> exchange = restTemplate.exchange("http://localhost:9090/board/recover/" + page,
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<>() {
+                });
+
+        return exchange.getBody();
     }
 
-    public List<PostListDTO> getPageableSearchPostList(Pageable pageable, String title, HttpServletRequest req) {
+    public List<PostListDTO> getPageableSearchPostList(Integer page, String title) {
 
-        User user = new User();
-        boolean isGuest = true;
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        if(Objects.nonNull(req.getSession(false))) {
-            user = uRepository.findByUserId((String) req.getSession(false).getAttribute("id")).orElse(null);
-            isGuest = false;
-        }
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<List<PostListDTO>> exchange = restTemplate.exchange(
+                "http://localhost:9090/board/search/" + title + "/" + page,
+                HttpMethod.POST,
+                requestEntity,
+                new ParameterizedTypeReference<>() {
+                });
 
-        List<ViewPostDTO> viewPostDTOS = pRepository.getPageableSearchList(pageable, title).getContent();
-        List<PostListDTO> postListDTOS = new ArrayList<>();
-
-        for (ViewPostDTO viewPostDTO : viewPostDTOS) {
-            Post post = pRepository.findById(viewPostDTO.getPostNo()).orElse(null);
-            User writer = uRepository.findById(viewPostDTO.getUser().getUserNo()).orElse(null);
-            postListDTOS.add(new PostListDTO(
-                isLike(user, post, isGuest),
-                viewPostDTO.getPostNo(),
-                viewPostDTO.getTitle(),
-                writer.getUserId(),
-                viewPostDTO.getWriteDateTime(),
-                cRepository.countAllByPost(post),
-                vRepository.countAllByPost(post)));
-        }
-        return postListDTOS;
+        return exchange.getBody();
     }
 
     public ContentDTO getContentByPostNo(Integer postNo) {
 
-        PostContentDTO postContentDTO = pRepository.getContent(postNo);
-        List<Comment> commentList = cRepository.findCommentListByPostNo(postNo);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        return new ContentDTO(postNo,
-                postContentDTO.getTitle(),
-                postContentDTO.getContent(),
-                postContentDTO.getUser().getUserId(),
-                postContentDTO.getWriteDateTime(),
-                postContentDTO.getModifyDateTime(),
-                commentList
-                );
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<ContentDTO> exchange = restTemplate.exchange("http://localhost:9090/board/content/" + postNo,
+                HttpMethod.GET,
+                requestEntity,
+                new ParameterizedTypeReference<>() {
+                });
+
+        return exchange.getBody();
     }
 
     public OnlyTitleContentDTO getOnlyTitleContent(Integer postNo) {
@@ -129,7 +107,8 @@ public class PostService {
     @Transactional
     public void postRegister(String title, String content, HttpServletRequest req) {
 
-        User user = uRepository.findByUserId((String) req.getSession(false).getAttribute("id")).orElse(null);
+        UserDTO userdto = uService.findUserById((String) req.getSession(false).getAttribute("id"));
+        User user = new User(userdto.getUserNo(), userdto.getUserId(), userdto.getUserPw(), userdto.getCheckAdmin());
         Post post = new Post(user, title, content, LocalDateTime.now(), null, false);
 
         pRepository.save(post);
@@ -149,24 +128,35 @@ public class PostService {
     @Transactional
     public void postDelete(Integer postNo) {
 
-        Post post = pRepository.findById(postNo).orElse(null);
-        post.setCheckHide(true);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        pRepository.save(post);
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        restTemplate.exchange("http://localhost:9090/board/delete/" + postNo,
+                HttpMethod.POST,
+                requestEntity,
+                new ParameterizedTypeReference<>() {
+                });
     }
 
     @Transactional
     public void postRecover(Integer postNo) {
 
-        Post post = pRepository.findById(postNo).orElse(null);
-        post.setCheckHide(false);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        pRepository.save(post);
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        restTemplate.exchange("http://localhost:9090/board/recover/" + postNo,
+                HttpMethod.POST,
+                requestEntity,
+                new ParameterizedTypeReference<>() {
+                });
     }
 
     @Transactional
     public void insertView(Integer postNo, HttpServletRequest req) {
-        User user = uRepository.findByUserId((String)req.getSession(false).getAttribute("id")).orElse(null);
+        UserDTO userdto = uService.findUserById((String) req.getSession(false).getAttribute("id"));
+        User user = new User(userdto.getUserNo(), userdto.getUserId(), userdto.getUserPw(), userdto.getCheckAdmin());
         Post post = pRepository.findById(postNo).orElse(null);
 
         View.ViewPK viewPK = new View.ViewPK(postNo, user.getUserNo());
@@ -178,13 +168,5 @@ public class PostService {
         View view = new View(viewPK, post, user);
 
         vRepository.save(view);
-    }
-
-    private boolean isLike(User user, Post post, boolean isGuest) {
-
-        if (isGuest) {
-            return false;
-        }
-        return lRepository.existsByPostAndUser(post, user);
     }
 }
