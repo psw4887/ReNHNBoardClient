@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BoardRegister</title>
+</head>
+<body>
+<form action="/board/register" method="post">
+    <span th:text="Title"></span><input type="text" name="writeTitle"><br />
+    <span th:text="Content"></span><br />
+    <textarea cols = "50" rows = "10" name="writeContent"></textarea><br/>
+    <input type="submit" value="Register">
+</form>
+</body>
+</html>

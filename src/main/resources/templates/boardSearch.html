@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2 style="text-align: center">Search Board</h2>
+<div style="text-align: center; display: flex; justify-content: center">
+    <table style="text-align: center" border = 1>
+        <tr>
+            <th>Like</th>
+            <th>No</th>
+            <th>Title</th>
+            <th>Writer</th>
+            <th>WriteDateTime</th>
+            <th>CommentCount</th>
+            <th>ViewCount</th>
+        </tr>
+        <tr th:each="board : ${searchList}">
+            <form th:action="'/like/check?postNo=' + ${board.postNo} + '&userNo=' + ${user.userNo}  + '&page=' + ${page}" method="post">
+                <td th:if="${board.isLike}">
+                    <input type="submit" value="unLike"></span>
+                </td>
+                <td th:unless="${board.isLike}">
+                    <input type="submit" value="like"></span>
+                </td>
+            </form>
+            <td th:text="${board.postNo}"></td>
+            <td th:text="${board.title}"></td>
+            <td> <a th:href="'/board/content?postNo=' + ${board.postNo}" th:text="${board.writer}"></a></td>
+            <td th:text="${board.writeDateTime}"></td>
+            <td th:text="${board.commentCount}"></td>
+            <td th:text="${board.viewCount}"></td>
+        </tr>
+    </table>
+</div>
+<div style="text-align: center">
+    <a th:href="'/board/view?page=' + ${page - 1}" th:if="${page} != 0" th:text="prev"></a>
+    <span th:text="'('+ ${page} + 'page)'"></span>
+    <a th:href="'/board/view?page=' + ${page + 1}" th:if="${isEnd} == 0" th:text="next"></a>
+</div>
+<div style="text-align: center">
+    <h3><a href="/board/view?page=0">Go Board</a></h3>
+    <h3><a href="/">Go Home</a></h3>
+</div>
+</body>
+</html>
