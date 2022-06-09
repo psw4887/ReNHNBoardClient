@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 @RequiredArgsConstructor
 public class CommentService {
 
-    private final PostRepository pRepository;
+    private final PostService pService;
     private final CommentRepository cRepository;
     private final UserService uService;
 
@@ -29,7 +29,7 @@ public class CommentService {
     @Transactional
     public void registerComment(Integer postNo, String content, HttpServletRequest req) {
 
-        Post post = pRepository.findById(postNo).orElse(null);
+        Post post = pService.getPost(postNo);
         UserDTO userDTO = uService.findUserById(String.valueOf(req.getSession(false).getAttribute("id")));
 
         User user = new User(userDTO.getUserNo(), userDTO.getUserId(), userDTO.getUserPw(), userDTO.getCheckAdmin());

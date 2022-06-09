@@ -7,7 +7,6 @@ import com.nhnacademy.nhn_board.dto.complete.PostListDTO;
 import com.nhnacademy.nhn_board.service.PostService;
 import com.nhnacademy.nhn_board.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

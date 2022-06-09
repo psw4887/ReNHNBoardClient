@@ -1,7 +1,10 @@
 package com.nhnacademy.nhn_board.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.nhn_board.dto.OnlyTitleContentDTO;
 import com.nhnacademy.nhn_board.dto.PostContentDTO;
+import com.nhnacademy.nhn_board.dto.PostRequest;
 import com.nhnacademy.nhn_board.dto.UserDTO;
 import com.nhnacademy.nhn_board.dto.ViewPostDTO;
 import com.nhnacademy.nhn_board.dto.complete.ContentDTO;
@@ -30,10 +33,22 @@ import java.util.Objects;
 public class PostService {
 
     private final RestTemplate restTemplate;
-    private final PostRepository pRepository;
     private final UserService uService;
     private final ViewRepository vRepository;
-    private final LikeRepository lRepository;
+
+    public Post getPost(Integer postNo) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<Post> exchange = restTemplate.exchange("http://localhost:9090/board/" + postNo,
+            HttpMethod.GET,
+            requestEntity,
+            new ParameterizedTypeReference<>() {
+            });
+
+        return exchange.getBody();
+    }
 
     public List<PostListDTO> getPageablePostList(Integer page) {
 
@@ -90,7 +105,8 @@ public class PostService {
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
-        ResponseEntity<ContentDTO> exchange = restTemplate.exchange("http://localhost:9090/board/content/" + postNo,
+        ResponseEntity<ContentDTO> exchange = restTemplate.exchange(
+            "http://localhost:9090/board/content/" + postNo,
                 HttpMethod.GET,
                 requestEntity,
                 new ParameterizedTypeReference<>() {
@@ -101,28 +117,56 @@ public class PostService {
 
     public OnlyTitleContentDTO getOnlyTitleContent(Integer postNo) {
 
-        return pRepository.getOnlyModify(postNo);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<OnlyTitleContentDTO> exchange = restTemplate.exchange(
+            "http://localhost:9090/board/modify/" + postNo,
+            HttpMethod.GET,
+            requestEntity,
+            new ParameterizedTypeReference<>() {
+            });
+
+        return exchange.getBody();
     }
 
     @Transactional
     public void postRegister(String title, String content, HttpServletRequest req) {
 
+        ObjectMapper mapper = new ObjectMapper();
+
         UserDTO userdto = uService.findUserById((String) req.getSession(false).getAttribute("id"));
         User user = new User(userdto.getUserNo(), userdto.getUserId(), userdto.getUserPw(), userdto.getCheckAdmin());
-        Post post = new Post(user, title, content, LocalDateTime.now(), null, false);
+        PostRequest post = new PostRequest(user, title, content);
 
-        pRepository.save(post);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        String request = "";
+        try {
+            request = mapper.writeValueAsString(post);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(request, httpHeaders);
+        restTemplate.exchange(
+            "http://localhost:9090/board/register/",
+            HttpMethod.POST,
+            requestEntity,
+            new ParameterizedTypeReference<>() {
+            });
     }
 
     @Transactional
     public void postModify(String title, String content, Integer postNo) {
 
-        Post post = pRepository.findById(postNo).orElse(null);
+        Post post = getPost(postNo);
         post.setTitle(title);
         post.setContent(content);
         post.setModifyDateTime(LocalDateTime.now());
 
-        pRepository.save(post);
     }
 
     @Transactional
@@ -157,7 +201,7 @@ public class PostService {
     public void insertView(Integer postNo, HttpServletRequest req) {
         UserDTO userdto = uService.findUserById((String) req.getSession(false).getAttribute("id"));
         User user = new User(userdto.getUserNo(), userdto.getUserId(), userdto.getUserPw(), userdto.getCheckAdmin());
-        Post post = pRepository.findById(postNo).orElse(null);
+        Post post = getPost(postNo);
 
         View.ViewPK viewPK = new View.ViewPK(postNo, user.getUserNo());
 

@@ -10,9 +10,4 @@ import java.util.List;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
-
-    Integer countAllByPost(Post post);
-
-    @Query("select c from Comment as c where c.post.postNo = ?1")
-    List<Comment> findCommentListByPostNo(int postNo);
 }

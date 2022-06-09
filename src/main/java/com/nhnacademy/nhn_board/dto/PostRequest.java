@@ -5,14 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OnlyTitleContentDTO {
+@Data
+public class PostRequest {
 
-    User user;
+    private User user;
 
-    String title;
+    private String title;
 
-    String content;
+    private String content;
 }

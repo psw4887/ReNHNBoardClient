@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class LikeService {
 
-    private final PostRepository pRepository;
+    private final PostService pService;
     private final UserRepository uRepository;
     private final LikeRepository lRepository;
 
@@ -26,7 +26,7 @@ public class LikeService {
 
     public void insertLike(Integer postNo, Integer userNo) {
 
-        Post post = pRepository.findById(postNo).orElse(null);
+        Post post = pService.getPost(postNo);
         User user = uRepository.findById(userNo).orElse(null);
 
         Like like = new Like(post, user);
